@@ -147,7 +147,7 @@ int theSame(char *p)
 }
 
 int zeroLoop(char *p)
-{
+{ 
 //pathern: [-]
 //detect the loop that used to decrement the byte value to zero
     p++;
