@@ -27,123 +27,123 @@ int zeroLoop(char *p);
 
 int main(int argc, char *argv[])
 {
-	if (argc < 2) err("Usage: jit-x64 <inputfile>");
-	dasm_State *state;
-	initjit(&state, actions);
+    if (argc < 2) err("Usage: jit-x64 <inputfile>");
+    dasm_State *state;
+    initjit(&state, actions);
 
-	unsigned int maxpc = 0;
-	int pcstack[MAX_NESTING];
-	int *top = pcstack, *limit = pcstack + MAX_NESTING;
-	int same = 0;
+    unsigned int maxpc = 0;
+    int pcstack[MAX_NESTING];
+    int *top = pcstack, *limit = pcstack + MAX_NESTING;
+    int same = 0;
     int zero = 0;
 
-	// Function prologue.
-	|  push PTR
-	|  mov  PTR, rdi      // rdi store 1st argument
+    // Function prologue.
+    |  push PTR
+    |  mov  PTR, rdi      // rdi store 1st argument
 
-	for (char *p = read_file(argv[1]); *p; p++) {
-		switch (*p) {
-		    case '>':
-			    same = theSame(p);
-			    if (same > 1) {
-				    |  add PTR, same
-			    } else {
-				    |  inc  PTR
-			    }
-			    p = p+(same-1);
-			    break;
-		    case '<':
-			    same = theSame(p);
-			    if (same > 1) {
-				    |  sub  PTR, same
-			    } else {
-				    |  dec  PTR
-			    }
-			    p = p+(same-1);
-			    break;
-		    case '+':
-			    same = theSame(p);
-			    if (same > 1) {
-				    |  add  byte [PTR], same
-			    } else {
-				    |  inc  byte [PTR]
-			    }
-			    p = p+(same-1);
-			    break;
-		    case '-':
-			    same = theSame(p);
-			    if (same > 1) {
-				    |  sub  byte [PTR], same
-			    } else {
-				    |  dec  byte [PTR]
-			    }
-			    p = p+(same-1);
-			    break;
-		    case '.':
-			    |  movzx edi, byte [PTR]
-			    |  callp putchar
-			    break;
-		    case ',':
-			    |  callp getchar
-			    |  mov   byte [PTR], al
-			    break;
-		    case '[':
+    for (char *p = read_file(argv[1]); *p; p++) {
+	    switch (*p) {
+	        case '>':
+		        same = theSame(p);
+		        if (same > 1) {
+			        |  add PTR, same
+		        } else {
+			        |  inc  PTR
+		        }
+		        p = p+(same-1);
+		        break;
+	        case '<':
+		        same = theSame(p);
+		        if (same > 1) {
+			        |  sub  PTR, same
+		        } else {
+			        |  dec  PTR
+		        }
+		        p = p+(same-1);
+		        break;
+	        case '+':
+		        same = theSame(p);
+		        if (same > 1) {
+			        |  add  byte [PTR], same
+		        } else {
+			        |  inc  byte [PTR]
+		        }
+		        p = p+(same-1);
+		        break;
+	        case '-':
+		        same = theSame(p);
+		        if (same > 1) {
+			        |  sub  byte [PTR], same
+		        } else {
+			        |  dec  byte [PTR]
+		        }
+		        p = p+(same-1);
+		        break;
+	        case '.':
+		        |  movzx edi, byte [PTR]
+		        |  callp putchar
+		        break;
+	        case ',':
+		        |  callp getchar
+		        |  mov   byte [PTR], al
+		        break;
+	        case '[':
                 zero = zeroLoop(p);
                 if (zero) {
                     |  mov byte [PTR], 0
                     p = p+2;
                 } else {
-			        if (top == limit) err("Nesting too deep.");
-			        // Each loop gets two pclabels: at the beginning and end.
-			        // We store pclabel offsets in a stack to link the loop
-			        // begin and end together.
-			        maxpc += 2;
-			        *top++ = maxpc;
-			        dasm_growpc(&state, maxpc);
-			        |  cmp  byte [PTR], 0
-			        |  je   =>(maxpc-2)
-			        |=>(maxpc-1):
+		            if (top == limit) err("Nesting too deep.");
+		            // Each loop gets two pclabels: at the beginning and end.
+		            // We store pclabel offsets in a stack to link the loop
+		            // begin and end together.
+		            maxpc += 2;
+		            *top++ = maxpc;
+		            dasm_growpc(&state, maxpc);
+		            |  cmp  byte [PTR], 0
+		            |  je   =>(maxpc-2)
+		            |=>(maxpc-1):
                 }
-			    break;
-		    case ']':
-			    if (top == pcstack) err("Unmatched ']'");
-			    top--;
-			    |  cmp  byte [PTR], 0
-			    |  jne  =>(*top-1)
-			    |=>(*top-2):
-			    break;
-		}
-	}
+		        break;
+	        case ']':
+		        if (top == pcstack) err("Unmatched ']'");
+		        top--;
+		        |  cmp  byte [PTR], 0
+		        |  jne  =>(*top-1)
+		        |=>(*top-2):
+		        break;
+	    }
+    }
 
-	// Function epilogue.
-	|  pop  PTR
-	|  ret
+    // Function epilogue.
+    |  pop  PTR
+    |  ret
 
-	void (*fptr)(char*) = jitcode(&state);
-	char *mem = calloc(30000, 1);
-	fptr(mem);
-	free(mem);
-	free_jitcode(fptr);
-	return 0;
+    void (*fptr)(char*) = jitcode(&state);
+    char *mem = calloc(30000, 1);
+    fptr(mem);
+    free(mem);
+    free_jitcode(fptr);
+    return 0;
 }
 
 int theSame(char *p)
 {
 //pattern: +++
 //calculate how many operators are the same side-by-side
-	char operator = *p;
-	int times = 0;
+    char operator = *p;
+    int times = 0;
 
-	while (*p) {
-		if (*p == operator) {
-			times++;
-		} else {
-			break;
-		}
-		p++;
-	}
+    while (*p) {
+        if (*p == operator) {
+	        times++;
+        } else {
+	        break;
+        }
+        p++;
+    }
 
-	return times;
+    return times;
 }
 
 int zeroLoop(char *p)
