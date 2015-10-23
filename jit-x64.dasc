@@ -41,69 +41,69 @@ int main(int argc, char *argv[])
 
 	for (char *p = read_file(argv[1]); *p; p++) {
 		switch (*p) {
-		case '>':
-			same = theSame(p);
-			if (same > 1) {
-				|  add PTR, same
-			} else {
-				|  inc  PTR
-			}
-			p = p+(same-1);
-			break;
-		case '<':
-			same = theSame(p);
-			if (same > 1) {
-				|  sub  PTR, same
-			} else {
-				|  dec  PTR
-			}
-			p = p+(same-1);
-			break;
-		case '+':
-			same = theSame(p);
-			if (same > 1) {
-				|  add  byte [PTR], same
-			} else {
-				|  inc  byte [PTR]
-			}
-			p = p+(same-1);
-			break;
-		case '-':
-			same = theSame(p);
-			if (same > 1) {
-				|  sub  byte [PTR], same
-			} else {
-				|  dec  byte [PTR]
-			}
-			p = p+(same-1);
-			break;
-		case '.':
-			|  movzx edi, byte [PTR]
-			|  callp putchar
-			break;
-		case ',':
-			|  callp getchar
-			|  mov   byte [PTR], al
-			break;
-		case '[':
-			if (top == limit) err("Nesting too deep.");
-			// Each loop gets two pclabels: at the beginning and end.
-			// We store pclabel offsets in a stack to link the loop
-			// begin and end together.
-			maxpc += 2;
-			*top++ = maxpc;
-			dasm_growpc(&state, maxpc);
-			|  cmp  byte [PTR], 0
-			|  je   =>(maxpc-2)
-			|=>(maxpc-1):
-			break;
-		case ']':
-			if (top == pcstack) err("Unmatched ']'");
-			top--;
-			|  cmp  byte [PTR], 0
-			|  jne  =>(*top-1)
-			|=>(*top-2):
-			break;
+		    case '>':
+			    same = theSame(p);
+			    if (same > 1) {
+				    |  add PTR, same
+			    } else {
+				    |  inc  PTR
+			    }
+			    p = p+(same-1);
+			    break;
+		    case '<':
+			    same = theSame(p);
+			    if (same > 1) {
+				    |  sub  PTR, same
+			    } else {
+				    |  dec  PTR
+			    }
+			    p = p+(same-1);
+			    break;
+		    case '+':
+			    same = theSame(p);
+			    if (same > 1) {
+				    |  add  byte [PTR], same
+			    } else {
+				    |  inc  byte [PTR]
+			    }
+			    p = p+(same-1);
+			    break;
+		    case '-':
+			    same = theSame(p);
+			    if (same > 1) {
+				    |  sub  byte [PTR], same
+			    } else {
+				    |  dec  byte [PTR]
+			    }
+			    p = p+(same-1);
+			    break;
+		    case '.':
+			    |  movzx edi, byte [PTR]
+			    |  callp putchar
+			    break;
+		    case ',':
+			    |  callp getchar
+			    |  mov   byte [PTR], al
+			    break;
+		    case '[':
+			    if (top == limit) err("Nesting too deep.");
+			    // Each loop gets two pclabels: at the beginning and end.
+			    // We store pclabel offsets in a stack to link the loop
+			    // begin and end together.
+			    maxpc += 2;
+			    *top++ = maxpc;
+			    dasm_growpc(&state, maxpc);
+			    |  cmp  byte [PTR], 0
+			    |  je   =>(maxpc-2)
+			    |=>(maxpc-1):
+			    break;
+		    case ']':
+			    if (top == pcstack) err("Unmatched ']'");
+			    top--;
+			    |  cmp  byte [PTR], 0
+			    |  jne  =>(*top-1)
+			    |=>(*top-2):
+			    break;
 		}
 	}
 
