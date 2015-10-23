@@ -22,6 +22,9 @@
 #define Dst &state
 #define MAX_NESTING 256
 
+int theSame(char *p);
+int zeroLoop(char *p);
+
 int main(int argc, char *argv[])
 {
 	if (argc < 2) err("Usage: jit-x64 <inputfile>");
@@ -122,5 +125,40 @@ int main(int argc, char *argv[])
 	free(mem);
 	free_jitcode(fptr);
 	return 0;
+}
+
+int theSame(char *p)
+{
+//pattern: +++
+//calculate how many operators are the same side-by-side
+	char operator = *p;
+	int times = 0;
+
+	while (*p) {
+		if (*p == operator) {
+			times++;
+		} else {
+			break;
+		}
+		p++;
+	}
+
+	return times;
+}
+
+int zeroLoop(char *p)
+{ 
+//pathern: [-]
+//detect the loop that used to decrement the byte value to zero
+    p++;
+
+    if (*p == '-') {
+        p++;
+        if (*p == ']') {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
